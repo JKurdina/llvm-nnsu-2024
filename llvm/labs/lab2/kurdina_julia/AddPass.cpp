@@ -39,7 +39,7 @@ struct AddPass : public PassInfoMixin<AddPass> {
         }
       }
       SmallVector<BasicBlock *, 8> ExitBlock;
-      l->getExitBlock(ExitBlock);
+      l->getExitBlocks(ExitBlock);
       bool loop_func_end = false;
       for (auto *e : ExitBlock) {
         loop_func_end = false;
