@@ -1,0 +1,67 @@
+#include "mlir/Dialect/LLVMIR/LLVMDialect.h"
+#include "mlir/Pass/Pass.h"
+#include "mlir/Tools/Plugins/PassPlugin.h"
+
+using namespace mlir;
+
+class MaxDepthPass : public PassWrapper<MaxDepthPass, OperationPass<ModuleOp>> {
+public:
+  StringRef getArgument() const final { return "KurdinaMaxDepth"; }
+  StringRef getDescription() const final {
+    return "Counts the max depth of region nests in the function";
+  }
+
+  void runOnOperation() override {
+    
+    getOperation()->walk([&](Operation* op) {
+      if (auto funcOp = dyn_cast<LLVM::LLVMFuncOp>(op)) {
+        int maxDepth = 0;
+        funcOp.walk[&](Block * block) {
+          int curDepth = 0;
+          DepthBlock(block, curDepth, maxDepth);
+        }
+        funcOp->setAttr("maxDepth",
+                        IntegerAttr::get(funcOp.getContext(), maxDepth));
+      }
+    }
+  });
+
+private:
+  void DepthBlock(Block *block, int &curDepth, int &maxDepth) {
+    block->walk([&](Operation *op) {
+      // Проверяем, является ли операция условием или циклом
+      if (auto loopOp = dyn_cast<LLVM::LoopOp>(op) || auto ifOp =
+                            dyn_cast<IfOp>(op)) {
+        // Увеличиваем текущую глубину при входе в условие или цикл
+        curDepth++;
+        // Обновляем максимальную глубину, если текущая глубина больше
+        if (currentDepth > maxDepth) {
+          maxDepth = currentDepth;
+        }
+      }
+
+      if (auto nestedBlock = dyn_cast<Block>(op)) {
+        // Рекурсивно обходим дочерний блок с текущей глубиной и максимальной
+        // глубиной
+        DepthBlock(nestedBlock, curDepth, maxDepth);
+      }
+
+      if (auto loopOp = dyn_cast<LLVM::LoopOp>(op) || dyn_cast<IfOp>(op)) {
+        // Уменьшаем текущую глубину при выходе из условия или цикла
+        curDepth--;
+      }
+    });
+  }
+};
+
+MLIR_DECLARE_EXPLICIT_TYPE_ID(MaxDepthPass)
+MLIR_DEFINE_EXPLICIT_TYPE_ID(MaxDepthPass)
+
+PassPluginLibraryInfo getMaxDepthPassPluginInfo() {
+  return {MLIR_PLUGIN_API_VERSION, "KurdinaMaxDepth", LLVM_VERSION_STRING,
+          []() { PassRegistration<MaxDepthPass>(); }};
+}
+
+extern "C" LLVM_ATTRIBUTE_WEAK PassPluginLibraryInfo mlirGetPassPluginInfo() {
+  return getMaxDepthPassPluginInfo();
+}
