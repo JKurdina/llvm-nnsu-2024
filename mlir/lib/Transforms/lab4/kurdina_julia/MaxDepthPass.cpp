@@ -1,7 +1,6 @@
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Tools/Plugins/PassPlugin.h"
-#include "mlir/IR/Function.h"
 
 using namespace mlir;
 
@@ -15,7 +14,7 @@ public:
 
   void runOnOperation() override {
     getOperation().walk([&](Operation *op) {
-      if (auto funcOp = dyn_cast<FuncOp>(op)) {
+      if (auto funcOp = dyn_cast<LLVM::LLVMFuncOp>(op)) {
         int maxDepth = getMaxDepth(funcOp);
         funcOp->setAttr(
             "maxNestDepth",
@@ -25,7 +24,7 @@ public:
   }
 
 private:
-  int getMaxDepth(FuncOp funcOp) {
+  int getMaxDepth(LLVM::LLVMFuncOp funcOp) {
     int maxDepth = 1;
     funcOp.walk([&](Operation *op) {
       int depth = 1;
