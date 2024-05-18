@@ -32,9 +32,10 @@ public:
 private:
   void DepthBlock(Block *block, int &curDepth, int &maxDepth) {
     block->walk([&](Operation *op) {
+      auto loopOp = dyn_cast<loop::LoopOp>(op);
+      auto ifOp = dyn_cast<IfOp>(op);
       // Проверяем, является ли операция условием или циклом
-      if ((auto loopOp = dyn_cast<loop::LoopOp>(op)) || (auto ifOp =
-                            dyn_cast<IfOp>(op))) {
+      if (loopOp != nullptr || ifOp != nullptr) {
         // Увеличиваем текущую глубину при входе в условие или цикл
         curDepth++;
         // Обновляем максимальную глубину, если текущая глубина больше
@@ -42,14 +43,14 @@ private:
           maxDepth = curDepth;
         }
       }
-
-      if (auto *nestedBlock = dyn_cast<Block>(op)) {
+      auto *nestedBlock = dyn_cast<Block>(op);
+      if (nestedBlock != nullptr) {
         // Рекурсивно обходим дочерний блок с текущей глубиной и максимальной
         // глубиной
         DepthBlock(nestedBlock, curDepth, maxDepth);
       }
 
-      if (auto loopOp = dyn_cast<LLVM::LoopOp>(op) || dyn_cast<IfOp>(op)) {
+      if (loopOp != nullptr || ifOp != nullptr) {
         // Уменьшаем текущую глубину при выходе из условия или цикла
         curDepth--;
       }
