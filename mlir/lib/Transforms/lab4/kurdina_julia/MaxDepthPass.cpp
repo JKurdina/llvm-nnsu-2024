@@ -1,6 +1,7 @@
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Tools/Plugins/PassPlugin.h"
+#include "mlir/IR/Function.h"
 
 using namespace mlir;
 
@@ -18,7 +19,7 @@ public:
         int maxDepth = getMaxDepth(funcOp);
         funcOp->setAttr(
             "maxNestDepth",
-            IntegerAttr::get(IntegerType::get(getContext(), 32), maxDepth));
+            IntegerAttr::get(IntegerType::get(funcOp.getContext(), 32), maxDepth);
       }
     });  
   }
@@ -29,7 +30,7 @@ private:
     funcOp.walk([&](Operation *op) {
       int depth = 1;
       while (op) {
-        if (auto region = dyn_cast<Region>(op)) {
+        if (auto region = dyn_cast<Region>(op) != nullptr) {
           depth++;
         }
         op = op->getBlock()->getParentOp();
