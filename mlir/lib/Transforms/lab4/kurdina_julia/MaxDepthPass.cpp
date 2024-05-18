@@ -30,7 +30,8 @@ private:
     funcOp.walk([&](Operation *op) {
       int depth = 1;
       while (op) {
-        if (auto region = dyn_cast<Region>(op)) {
+        auto region = dyn_cast<Region>(op);
+        if (region != nullptr) {
           depth++;
         }
         op = op->getBlock()->getParentOp();
