@@ -17,10 +17,10 @@ namespace {
       getOperation()->walk([&](Operation* op) {
       if (auto funcOp = dyn_cast<LLVM::LLVMFuncOp>(op)) {
         int maxDepth = 0;
-        funcOp.walk[&](Block *block) {
+        funcOp.walk([&](Block *block) {
           int curDepth = 0;
           DepthBlock(block, curDepth, maxDepth);
-        }
+        });
         funcOp->setAttr("maxDepth",
                         IntegerAttr::get(funcOp.getContext(), maxDepth));
       }
