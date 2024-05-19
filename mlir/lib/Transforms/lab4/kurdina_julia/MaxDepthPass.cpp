@@ -28,14 +28,14 @@ private:
   int getMaxDepth(LLVM::LLVMFuncOp funcOp) {
     int maxDepth = 1;
     funcOp.walk([&](Operation *op) {
-      int depth = 1;
+      int depth = 0;
       Operation *currentOp = op;
       while (currentOp) {
         if (currentOp->getNumRegions() != 0) {
           depth++;
         }
-        if (currentOp->getBlock()) {
-          currentOp = currentOp->getBlock()->getParentOp();
+        if (currentOp->getParentOp()) {
+          currentOp = currentOp->getParentOp();
         } else {
           currentOp = nullptr;
         }
