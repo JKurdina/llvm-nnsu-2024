@@ -1,27 +1,25 @@
 // RUN: mlir-opt -load-pass-plugin=%mlir_lib_dir/KurdinaMaxDepth%shlibext --pass-pipeline="builtin.module(KurdinaMaxDepth)" %s | FileCheck %s
 
 module {
-  llvm.func @func1() {
-    %0 = llvm.mlir.constant(1 : i32) : i32
-    %1 = llvm.mlir.constant(2 : i32) : i32
-    %2 = llvm.cmpi "eq", %0, %1 : i32
-    %3 = llvm.cond_br %2, ^bb1, ^bb2
-    ^bb1:
-      %4 = llvm.mlir.constant(3 : i32) : i32
-      llvm.br ^bb3
-    ^bb2:
-      %5 = llvm.mlir.constant(4 : i32) : i32
-      llvm.br ^bb3
-    ^bb3:
-      %6 = llvm.mlir.constant(5 : i32) : i32
-      llvm.return
+  llvm.func @func(%arg0: i32) {
+    %i = arith.constant 0 : i32
+    %a = arith.constant %arg0 : i32
+    br ^bb1(%a, %i : i32, i32)
+    ^bb1(%a: i32, %i: i32) {
+      %cmp = arith.cmpi "slt", %i, 10 : i32
+      cond_br %cmp, ^bb2, ^bb3
+      ^bb2 {
+        %a_inc = arith.addi %a, 1 : i32
+        %i_inc = arith.addi %i, 1 : i32
+        br ^bb1(%a_inc, %i_inc : i32, i32)
+      }
+      ^bb3 {
+        br ^bb4
+      }
+      ^bb4 {
+        llvm.return
+      }
+    }
   }
-  // CHECK: func1 maxDepth=2
-
-  llvm.func @main() {
-    %0 = llvm.mlir.constant(1 : i32) : i32
-    %1 = llvm.mlir.constant(2 : i32) : i32
-    %2 = llvm.call @func1() : () -> ()
-    llvm.return
-  }
+  // CHECK: attributes { maxDepth = 2 : i32 }
 }
