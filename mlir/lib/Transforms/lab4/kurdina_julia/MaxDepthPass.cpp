@@ -28,13 +28,14 @@ private:
   int getMaxDepth(LLVM::LLVMFuncOp funcOp) {
     int maxDepth = 1;
     int depth = 1;
+    Operation *parent = funcOp;
     funcOp.walk([&](Operation *op) {
-      if (op->getNumRegions() != 0) {
+      if (op->getNumRegions() > 0) {
         depth++;
       }
-      maxDepth = std::max(depth, maxDepth);
+
     });
-    return maxDepth;
+    return depth;
   }
 };
 } // namespace
