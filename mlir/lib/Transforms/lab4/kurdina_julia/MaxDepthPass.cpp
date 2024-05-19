@@ -26,10 +26,13 @@ public:
 
 private:
   int getMaxDepth(LLVM::LLVMFuncOp funcOp) {
-    int maxDepth = 0;
+    int maxDepth = 1;
+    int depth = 1;
     funcOp.walk([&](Operation *op) {
-      
-      maxDepth = std::max(maxDepth, op->getNumRegions());
+      if (op->getNumRegions() != 0) {
+        depth++;
+      }
+      maxDepth = std::max(depth, maxDepth);
     });
     return maxDepth;
   }
