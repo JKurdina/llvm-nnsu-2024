@@ -27,22 +27,19 @@ public:
 private:
   int getMaxDepth(LLVM::LLVMFuncOp funcOp) {
     int maxDepth = 1;
-    std::vector<Operation *> operations;
+    int depth = 1;
+    Operation *parent = funcOp;
     funcOp.walk([&](Operation *op) {
-      operations.push_back(op);
-    });
-    Operation *curOp;
-    while (!operations.empty()) {
-      int depth = 0;
-      curOp = operations.back();
-      operations.pop_back();
-      while (curOp->getParentOp()) {
-        depth++;
-        curOp = curOp->getParentOp();
+      if (op.getNumRegions() > 0) {
+        Region &region = op->getRegion(0);
+        if (!region.empty()) {
+          depth++;
+        }
       }
-      maxDepth = std::max(maxDepth, depth);
-    }
-    return maxDepth;
+
+      
+    });
+    return depth;
   }
 };
 } // namespace
