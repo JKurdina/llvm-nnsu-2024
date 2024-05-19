@@ -30,7 +30,9 @@ private:
     int depth = 1;
     Operation *parent = funcOp;
     funcOp.walk([&](Operation *op) {
-      if (op->getNumRegions() > 0) {
+      Region &region = op->getRegion(0);
+
+      if (!region.empty()) {
         depth++;
       }
 
