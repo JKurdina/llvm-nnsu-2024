@@ -33,7 +33,11 @@ private:
         if (op->getNumRegions() != 0) {
           depth++;
         }
-        op = op->getBlock()->getParentOp();
+        if (op->getBlock()) {
+          op = op->getBlock()->getParentOp();
+        } else {
+          op = nullptr;
+        }
       }
       maxDepth = std::max(maxDepth, depth);
     });
