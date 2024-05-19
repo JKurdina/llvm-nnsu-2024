@@ -29,14 +29,15 @@ private:
     int maxDepth = 1;
     funcOp.walk([&](Operation *op) {
       int depth = 1;
-      while (op) {
-        if (op->getNumRegions() != 0) {
+      Operation *currentOp = op;
+      while (currentOp) {
+        if (currentOp->getNumRegions() != 0) {
           depth++;
         }
-        if (op->getBlock()) {
-          op = op->getBlock()->getParentOp();
+        if (currentOp->getBlock()) {
+          currentOp = currentOp->getBlock()->getParentOp();
         } else {
-          op = nullptr;
+          currentOp = nullptr;
         }
       }
       maxDepth = std::max(maxDepth, depth);
