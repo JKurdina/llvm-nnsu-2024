@@ -36,7 +36,7 @@ private:
     int maxDepth = depth;
 
     // Рекурсивный обход операций
-    op->walk([&](Operation *nestedOp) {
+    op.walk([&](Operation *nestedOp) {
       // Вызов рекурсивного обхода для вложенной операции
       maxDepth = std::max(maxDepth, getFunctionDepth(nestedOp, depth + 1));
     });
