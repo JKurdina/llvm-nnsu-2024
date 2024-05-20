@@ -17,7 +17,8 @@ public:
   void runOnOperation() override {
     getOperation().walk([&](Operation *op) {
       if (auto funcOp = dyn_cast<LLVM::LLVMFuncOp>(op)) {
-        int maxDepth = getFunctionDepth(funcOp);
+        int d = 0;
+        int maxDepth = getFunctionDepth(funcOp, d);
         funcOp->setAttr(
             "maxDepth",
             IntegerAttr::get(IntegerType::get(funcOp.getContext(), 32), maxDepth));
