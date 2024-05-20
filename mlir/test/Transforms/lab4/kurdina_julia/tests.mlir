@@ -122,4 +122,13 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<#dlti.dl_entry<i1, dense<8> : ve
   ^bb9:  // pred: ^bb1
     llvm.return
   }
+  llvm.func @func1(%arg0: i32, %arg1: i32) attributes {passthrough = ["mustprogress", "noinline", "nounwind", "optnone", ["uwtable", "2"], ["frame-pointer", "all"], ["min-legal-vector-width", "0"], ["no-trapping-math", "true"], ["stack-protector-buffer-size", "8"], ["target-cpu", "x86-64"], ["target-features", "+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87"], ["tune-cpu", "generic"]]} {
+// CHECK: llvm.func @func1(%arg0: i32, %arg1: i32) {{.*}}attributes {{.*}}maxDepth = 1 : i32
+    %0 = llvm.mlir.constant(1 : i32) : i32
+    %1 = llvm.alloca %0 x i32 {alignment = 4 : i64} : (i32) -> !llvm.ptr
+    %2 = llvm.alloca %0 x i32 {alignment = 4 : i64} : (i32) -> !llvm.ptr
+    llvm.store %arg0, %1 : i32, !llvm.ptr
+    llvm.store %arg1, %2 : i32, !llvm.ptr
+    llvm.return
+  }
 }
