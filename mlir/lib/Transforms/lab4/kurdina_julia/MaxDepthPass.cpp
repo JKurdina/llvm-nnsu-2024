@@ -37,8 +37,11 @@ private:
     op->walk([&](Operation *nestedOp) {
       if (nestedOp->getNumRegions() > 0) {
         for (Region &region : nestedOp->getRegions()) {
-          int regionDepth = getRegionDepth(region.front().get());
-          maxDepth = std::max(maxDepth, regionDepth);
+          if (!region.empty()) {
+            Operation *blockOp = region.front().getParentOp();
+            int regionDepth = getRegionDepth(blockOp);
+            maxDepth = std::max(maxDepth, regionDepth);
+          }
         }
       }
     });
