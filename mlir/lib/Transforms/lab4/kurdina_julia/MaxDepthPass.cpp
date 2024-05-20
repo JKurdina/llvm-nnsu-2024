@@ -18,7 +18,7 @@ public:
     getOperation().walk([&](Operation *op) {
       if (auto funcOp = dyn_cast<LLVM::LLVMFuncOp>(op)) {
         int d = 1;
-        int maxDepth = getFunctionDepth(funcOp, d);
+        int maxDepth = getFunctionDepth(op, d);
         funcOp->setAttr(
             "maxDepth",
             IntegerAttr::get(IntegerType::get(funcOp.getContext(), 32), maxDepth));
@@ -36,7 +36,7 @@ private:
     int maxDepth = depth;
 
     // Рекурсивный обход операций
-    op.walk([&](Operation *nestedOp) {
+    op->walk([&](Operation *nestedOp) {
       // Вызов рекурсивного обхода для вложенной операции
       maxDepth = std::max(maxDepth, getFunctionDepth(nestedOp, depth + 1));
     });
