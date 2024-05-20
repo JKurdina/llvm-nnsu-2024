@@ -4,6 +4,8 @@
 #include "mlir/IR/Region.h"
 #include "mlir/IR/Operation.h"
 #include <vector>
+#include <iostream>
+#include <stack>
 
 using namespace mlir;
 
