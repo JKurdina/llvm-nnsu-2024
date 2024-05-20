@@ -2,6 +2,7 @@
 #include "mlir/Pass/Pass.h"
 #include "mlir/Tools/Plugins/PassPlugin.h"
 #include "mlir/IR/Region.h"
+#include "mlir/IR/Operation.h"
 
 using namespace mlir;
 
