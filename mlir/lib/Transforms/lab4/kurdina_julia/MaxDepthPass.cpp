@@ -36,7 +36,7 @@ private:
         if (curOp->getParentRegion()) {
           depth++;
         }
-        curOp = curOp->getParentRegion();
+        curOp = curOp->getParentOp();
       }
       maxDepth = std::max(maxDepth, depth);
     });
