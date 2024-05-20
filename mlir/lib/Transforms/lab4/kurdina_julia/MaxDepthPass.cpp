@@ -27,11 +27,11 @@ public:
 
 private:
   int getMaxDepth(LLVM::LLVMFuncOp funcOp) {
-    int maxDepth = 0;
+    int maxDepth = 1;
     Operation *curOp;
     funcOp.walk([&](Operation *op) {
       curOp = op;
-      int depth = 0;
+      int depth = 1;
       while (curOp) {
         if (curOp->getParentRegion()) {
           depth++;
