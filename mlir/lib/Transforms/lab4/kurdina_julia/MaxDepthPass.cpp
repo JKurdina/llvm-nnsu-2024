@@ -3,6 +3,7 @@
 #include "mlir/Tools/Plugins/PassPlugin.h"
 #include "mlir/IR/Region.h"
 #include "mlir/IR/Operation.h"
+#include <vector>
 
 using namespace mlir;
 
@@ -18,7 +19,7 @@ public:
     getOperation().walk([&](Operation *op) {
       if (auto funcOp = dyn_cast<LLVM::LLVMFuncOp>(op)) {
         int d = 1;
-        int maxDepth = getFunctionDepth(op, d);
+        int maxDepth = getMaxDepthFunc(op);
         funcOp->setAttr(
             "maxDepth",
             IntegerAttr::get(IntegerType::get(funcOp.getContext(), 32), maxDepth));
@@ -27,21 +28,31 @@ public:
   }
 
 private:
-  
-  int getFunctionDepth(Operation *op, int depth) {
-    if (!op) {
-      return depth; // Можно выбрать другое поведение в случае нулевого
-                    // указателя
-    }
-    int maxDepth = depth;
+  int getMaxDepthFunc(Operation* funcOp) {
+    std::vector<Operation *> lastStack;
+    int maxDepth = 1;
+    int depth = 0;
+    funcOp->walk([&](Operation *op) {
+      bool hasNested = false;
+      Operation *curOp = op;
+      Operation *lastOp;
+      std::vector<Operation *> opStack;
+      curOp->walk([&](Operation *o) {
+        opStack.push_back(o);
+        hasNested = true;
+      });
+      if (hasNested) {
+        depth++;
+        lastOp = opStack.back();
+        lastStack.push_back(lastOp);
+        opStack.clear();
+      } else if (op == lastStack.back()) {
+        maxDepth = std::max(maxDepth, depth);
+        depth--;
+        lastStack.pop_back();
+      }
 
-    // Рекурсивный обход операций
-    op->walk([&](Operation *nestedOp) {
-      // Вызов рекурсивного обхода для вложенной операции
-      int curDepth = getFunctionDepth(nestedOp, depth + 1);
-      maxDepth = std::max(maxDepth, curDepth);
     });
-
     return maxDepth;
   }
 };
