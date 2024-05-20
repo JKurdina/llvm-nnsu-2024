@@ -19,7 +19,7 @@ public:
     getOperation().walk([&](Operation *op) {
       if (auto funcOp = dyn_cast<LLVM::LLVMFuncOp>(op)) {
         int d = 1;
-        int maxDepth = getRegionDepth(op);
+        int maxDepth = getFunctionDepth(op);
         funcOp->setAttr(
             "maxDepth",
             IntegerAttr::get(IntegerType::get(funcOp.getContext(), 32), maxDepth));
@@ -28,25 +28,27 @@ public:
   }
 
 private:
-  int getRegionDepth(Operation *op) {
+  int getFunctionDepth(Operation *op) {
     if (!op) {
       return 0; // ≈сли операци€ пуста, возвращаем глубину 0
     }
 
     int maxDepth = 0;
-    op->walk([&](Operation *nestedOp) {
-      if (nestedOp->getNumRegions() > 0) {
-        for (Region &region : nestedOp->getRegions()) {
-          if (!region.empty()) {
-            Operation *blockOp = region.front().getParentOp();
-            int regionDepth = getRegionDepth(blockOp);
-            maxDepth = std::max(maxDepth, regionDepth);
-          }
-        }
-      }
-    });
+    std::stack<std::pair<Operation *, int>> opStack;
+    opStack.push({op, 1});
 
-    return maxDepth + 1; // ”величиваем глубину на 1 дл€ текущей операции
+    while (!opStack.empty()) {
+      auto [currentOp, depth] = opStack.top();
+      opStack.pop();
+
+      maxDepth = std::max(maxDepth, depth);
+
+      currentOp->walk([&](Operation *nestedOp) {
+        opStack.push({nestedOp, depth + 1});
+      });
+    }
+
+    return maxDepth;
   }
 };
 } // namespace
