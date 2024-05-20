@@ -29,6 +29,10 @@ public:
 private:
   
   int getFunctionDepth(Operation *op, int depth) {
+    if (!op) {
+      return depth; // Можно выбрать другое поведение в случае нулевого
+                    // указателя
+    }
     int maxDepth = depth;
 
     // Рекурсивный обход операций
