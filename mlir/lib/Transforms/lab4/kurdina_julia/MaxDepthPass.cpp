@@ -2,14 +2,15 @@
 #include "mlir/IR/PatternMatch.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Tools/Plugins/PassPlugin.h"
-
 #include "mlir/IR/BuiltinOps.h"
+#include "mlir/Dialect/LLVMIR/LLVMDialect.h"
+
 
 using namespace mlir;
 
 namespace {
 class MaxDepthPass
-    : public PassWrapper<MaxDepthPass, OperationPass<func::FuncOp>> {
+    : public PassWrapper<MaxDepthPass, OperationPass<ModuleOp>> {
 public:
   StringRef getArgument() const final { return "KurdinaMaxDepth"; }
   StringRef getDescription() const final {
@@ -18,10 +19,13 @@ public:
 
   void runOnOperation() override {
     getOperation()->walk([&](Operation *op) {
-      int maxDepth = getMaxDepth(op);
-      op->setAttr("maxDepth",
-                      IntegerAttr::get(
-                          IntegerType::get(op->getContext(), 32), maxDepth));
+      if (auto funcOp = dyn_cast<LLVM::LLVMFuncOp>(op)) {
+        int maxDepth = getMaxDepth(op);
+        funcOp->setAttr(
+            "maxDepth",
+            IntegerAttr::get(IntegerType::get(funcOp.getContext(), 32),
+                             maxDepth));
+      }
     });
   }
 
