@@ -17,11 +17,14 @@ public:
   }
 
   void runOnOperation() override {
-    getOperation()->walk([&](Operation *op) {
-      int maxDepth = getMaxDepth(op);
-      op->setAttr("maxDepth",
-                      IntegerAttr::get(
-                          IntegerType::get(op->getContext(), 32), maxDepth));
+    getOperation().walk([&](Operation *op) {
+      if (auto funcOp = dyn_cast<LLVM::LLVMFuncOp>(op)) {
+        int maxDepth = getMaxDepth(op);
+        funcOp->setAttr(
+            "maxDepth",
+            IntegerAttr::get(IntegerType::get(funcOp.getContext(), 32),
+                             maxDepth));
+      }
     });
   }
 
@@ -44,7 +47,7 @@ private:
     return maxDepth;
   }
 };
-} // namespace
+} // anonymous namespace
 
 MLIR_DECLARE_EXPLICIT_TYPE_ID(MaxDepthPass)
 MLIR_DEFINE_EXPLICIT_TYPE_ID(MaxDepthPass)
