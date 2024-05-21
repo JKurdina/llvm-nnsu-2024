@@ -19,7 +19,7 @@ public:
       int maxDepth = getMaxDepth(op);
       op->setAttr("maxDepth",
                       IntegerAttr::get(
-                          IntegerType::get(funcOp.getContext(), 32), maxDepth));
+                          IntegerType::get(op.getContext(), 32), maxDepth));
     });
   }
 
@@ -29,7 +29,7 @@ private:
     Operation *curOp;
     funcOp->walk([&](Operation *op) {
       curOp = op;
-      int depth = 0;
+      int depth = -1;
       while (curOp) {
         if (curOp->getParentOp()) {
           depth++;
