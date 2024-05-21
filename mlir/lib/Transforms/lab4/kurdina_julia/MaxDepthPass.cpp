@@ -20,8 +20,7 @@ public:
   void runOnOperation() override {
     getOperation().walk([&](Operation *op) {
       if (auto funcOp = dyn_cast<LLVM::LLVMFuncOp>(op)) {
-        int d = 1;
-        int maxDepth = getFunctionDepth(op);
+        int maxDepth = getMaxDepth(op);
         funcOp->setAttr(
             "maxDepth",
             IntegerAttr::get(IntegerType::get(funcOp.getContext(), 32), maxDepth));
@@ -30,25 +29,20 @@ public:
   }
 
 private:
-  int getFunctionDepth(Operation *op) {
-    if (!op) {
-      return 0; // ≈сли операци€ пуста, возвращаем глубину 0
-    }
-
-    int maxDepth = 0;
-    std::stack<std::pair<Operation *, int>> opStack;
-    opStack.push({op, 1});
-
-    while (!opStack.empty()) {
-      auto [currentOp, depth] = opStack.top();
-      opStack.pop();
-
+  int getMaxDepth(Operation *funcOp) {
+    int maxDepth = 1;
+    Operation *curOp;
+    funcOp.walk([&](Operation *op) {
+      curOp = op;
+      int depth = 1;
+      while (curOp) {
+        if (curOp->getParentOp()) {
+          depth++;
+        }
+        curOp = curOp->getParentOp();
+      }
       maxDepth = std::max(maxDepth, depth);
-
-      currentOp->walk([&](Operation *nestedOp) {
-        opStack.push({nestedOp, depth + 1});
-      });
-    }
+    });
 
     return maxDepth;
   }
