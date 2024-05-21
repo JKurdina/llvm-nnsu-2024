@@ -2,6 +2,8 @@
 #include "mlir/IR/Operation.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Tools/Plugins/PassPlugin.h"
+#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/PatternMatch.h"
 
 using namespace mlir;
 
@@ -15,7 +17,7 @@ public:
   }
 
   void runOnOperation() override {
-    getOperation().walk([&](Operation *op) {
+    getOperation()->walk([&](Operation *op) {
       int maxDepth = getMaxDepth(op);
       op->setAttr("maxDepth",
                       IntegerAttr::get(
