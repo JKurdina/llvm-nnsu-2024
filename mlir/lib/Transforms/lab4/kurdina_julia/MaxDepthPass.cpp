@@ -1,16 +1,13 @@
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Tools/Plugins/PassPlugin.h"
-#include "mlir/IR/Region.h"
 #include "mlir/IR/Operation.h"
-#include <vector>
-#include <iostream>
-#include <stack>
+#include "mlir/IR/Function.h"
 
 using namespace mlir;
 
 namespace {
-class MaxDepthPass : public PassWrapper<MaxDepthPass, OperationPass<ModuleOp>> {
+class MaxDepthPass : public PassWrapper<MaxDepthPass, OperationPass<FuncOp>> {
 public:
   StringRef getArgument() const final { return "KurdinaMaxDepth"; }
   StringRef getDescription() const final {
@@ -32,9 +29,9 @@ private:
   int getMaxDepth(Operation *funcOp) {
     int maxDepth = 1;
     Operation *curOp;
-    funcOp.walk([&](Operation *op) {
+    funcOp->walk([&](Operation *op) {
       curOp = op;
-      int depth = 1;
+      int depth = 0;
       while (curOp) {
         if (curOp->getParentOp()) {
           depth++;
