@@ -4,6 +4,7 @@
 #include "mlir/Tools/Plugins/PassPlugin.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/PatternMatch.h"
+#include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 
 using namespace mlir;
 
