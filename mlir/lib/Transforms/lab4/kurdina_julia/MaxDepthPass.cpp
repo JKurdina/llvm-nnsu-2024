@@ -5,12 +5,12 @@
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/PatternMatch.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
-
+#include "mlir/IR/Function.h"
 using namespace mlir;
 
 namespace {
 class MaxDepthPass
-    : public PassWrapper<MaxDepthPass, OperationPass<func::FuncOp>> {
+    : public PassWrapper<MaxDepthPass, OperationPass<FuncOp>> {
 public:
   StringRef getArgument() const final { return "KurdinaMaxDepth"; }
   StringRef getDescription() const final {
