@@ -19,7 +19,7 @@ public:
       int maxDepth = getMaxDepth(op);
       op->setAttr("maxDepth",
                       IntegerAttr::get(
-                          IntegerType::get(op.getContext(), 32), maxDepth));
+                          IntegerType::get(op->getContext(), 32), maxDepth));
     });
   }
 
