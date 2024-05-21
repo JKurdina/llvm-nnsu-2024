@@ -11,7 +11,7 @@ using namespace mlir;
 
 namespace {
 class MaxDepthPass
-    : public PassWrapper<MaxDepthPass, OperationPass<func::FuncOp>> {
+    : public PassWrapper<MaxDepthPass, OperationPass<ModuleOp>> {
 public:
   StringRef getArgument() const final { return "KurdinaMaxDepth"; }
   StringRef getDescription() const final {
