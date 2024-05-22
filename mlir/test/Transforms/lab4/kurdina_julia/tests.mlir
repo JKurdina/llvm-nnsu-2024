@@ -18,3 +18,16 @@ func.func @two() {
 
 // CHECK: maxDepth = 3
 func.func @three() {
+%cond = arith.constant 1 : i1
+    %0 = scf.if %cond -> (i1) {
+        %1 = scf.if %cond -> (i1) {
+            scf.yield %cond : i1
+        } else {
+            scf.yield %cond : i1
+        }
+        scf.yield %cond : i1
+    } else {
+        scf.yield %cond : i1
+    }
+    func.return
+}
