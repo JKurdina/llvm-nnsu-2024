@@ -2,14 +2,14 @@
 // RUN: mlir-opt -load-pass-plugin=%mlir_lib_dir/KurdinaMaxDepth%shlibext --pass-pipeline="builtin.module(func.func(KurdinaMaxDepth))" %t/one.mlir | FileCheck %t/one.mlir
 
 //--- one.mlir
-// CHECK: maxDepth = 1
 func.func @one() {
+// CHECK: func.func @one() {maxDepth = 1}
   func.return
 }
 
 //--- two.mlir
-// CHECK: maxDepth = 2
 func.func @two() {
+// CHECK: func.func @two() {maxDepth = 2}
     %cond = arith.constant 1 : i1
     %0 = scf.if %cond -> (i1) {
         scf.yield %cond : i1
@@ -20,8 +20,8 @@ func.func @two() {
 }
 
 //--- three.mlir
-// CHECK: maxDepth = 3
 func.func @three() {
+// CHECK: func.func @three() {maxDepth = 3}
     %cond = arith.constant 1 : i1
     %0 = scf.if %cond -> (i1) {
         %1 = scf.if %cond -> (i1) {
