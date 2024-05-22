@@ -3,13 +3,13 @@
 
 //--- one.mlir
 func.func @one() {
-// CHECK: func.func @one() {maxDepth = 1}
+// CHECK: func.func @one() attributes {maxDepth = 1 : i32}
   func.return
 }
 
 //--- two.mlir
 func.func @two() {
-// CHECK: func.func @two() {maxDepth = 2}
+// CHECK: func.func @two() attributes {maxDepth = 2 : i32}
     %cond = arith.constant 1 : i1
     %0 = scf.if %cond -> (i1) {
         scf.yield %cond : i1
@@ -21,7 +21,7 @@ func.func @two() {
 
 //--- three.mlir
 func.func @three() {
-// CHECK: func.func @three() {maxDepth = 3}
+// CHECK: func.func @three() attributes {maxDepth = 3 : i32}
     %cond = arith.constant 1 : i1
     %0 = scf.if %cond -> (i1) {
         %1 = scf.if %cond -> (i1) {
