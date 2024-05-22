@@ -1,10 +1,9 @@
 #include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/Dialect/LLVMIR/LLVMDialect.h"
+#include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/PatternMatch.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Tools/Plugins/PassPlugin.h"
-#include "mlir/IR/BuiltinOps.h"
-#include "mlir/Dialect/LLVMIR/LLVMDialect.h"
-
 
 using namespace mlir;
 
@@ -19,13 +18,10 @@ public:
 
   void runOnOperation() override {
     getOperation()->walk([&](Operation *op) {
-      if (auto funcOp = dyn_cast<LLVM::LLVMFuncOp>(op)) {
-        int maxDepth = getMaxDepth(op);
-        funcOp->setAttr(
-            "maxDepth",
-            IntegerAttr::get(IntegerType::get(funcOp.getContext(), 32),
-                             maxDepth));
-      }
+      int maxDepth = getMaxDepth(op);
+      op->setAttr("maxDepth",
+                      IntegerAttr::get(
+                          IntegerType::get(op->getContext(), 32), maxDepth));
     });
   }
 
