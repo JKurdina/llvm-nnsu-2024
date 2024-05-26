@@ -38,7 +38,7 @@ public:
               reg_add_1 = add_instr->getOperand(1).getReg();
               reg_add_2 = add_instr->getOperand(2).getReg();
               if (reg_mul == reg_add_1 || reg_mul == reg_add_2) {
-                del_instr.push_back(mul_instr, add_instr);
+                del_instr.emplace_back(mul_instr, add_instr);
                 change = true;
                 if (reg_mul == reg_add_1) {
                   reg = false;
