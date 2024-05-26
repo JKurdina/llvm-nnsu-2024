@@ -17,7 +17,7 @@ public:
     const TargetInstrInfo *info = MF.getSubtarget().getInstrInfo();
     std::vector<std::pair<MachineInstr *, MachineInstr *>> del_instr;
     bool change = false;
-    bool op = false;
+    bool reg = false;
 
     for (auto &MBB : MF) {
       MachineInstr *mul_instr = nullptr;
@@ -25,7 +25,7 @@ public:
       Register reg_mul;
       Register reg_add_1;
       Register reg_add_2;
-      bool reg = false;
+      
 
       for (auto &instr : MBB) {
         if (instr.getOpcode() == X86::MULPDrr) {
