@@ -687,5 +687,3 @@ body:             |
     ; CHECK-NEXT: %4:vr128 = nofpexcept DIVPDrr %2, %1, implicit $mxcsr
     ; CHECK-NEXT: %6:vr128 = nofpexcept ADDPDrm %5, $rip, 1, $noreg, %const.0, $noreg, implicit $mxcsr :: (load (s128) from constant-pool)
     ; CHECK-NEXT: $xmm0 = COPY %6
-
-...
