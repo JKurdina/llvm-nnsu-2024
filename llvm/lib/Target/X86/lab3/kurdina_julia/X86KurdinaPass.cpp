@@ -59,7 +59,7 @@ public:
     for (auto &[mul, add] : del_instr) {
       MachineInstrBuilder builder =
           BuildMI(*mul->getParent(), *mul, mul->getDebugLoc(),
-                  info->get(X86::VFMADD213PDr));
+                  info->get(X86::VFMADD213PDZ128r));
       builder.addReg(add->getOperand(0).getReg(), RegState::Define);
       builder.addReg(mul->getOperand(1).getReg());
       builder.addReg(mul->getOperand(2).getReg());
