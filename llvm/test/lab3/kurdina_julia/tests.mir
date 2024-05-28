@@ -517,7 +517,7 @@ body:             |
     renamable $xmm0 = nofpexcept ADDPDrr killed renamable $xmm0, killed renamable $xmm2, implicit $mxcsr
     RET64 $xmm0
 
-    ; CHECK: $xmm0 = VFMADD213PDZ128r $xmm0, $xmm1, $xmm2, implicit $mxcsr
+    ; CHECK: $xmm2 = VFMADD213PDZ128r $xmm0, $xmm1, $xmm2, implicit $mxcsr
     ; CHECK-NEXT: renamable $xmm0 = nofpexcept ADDPDrr killed renamable $xmm0, killed renamable $xmm2, implicit $mxcsr
     ; CHECK-NEXT: RET64 $xmm0
 ...
