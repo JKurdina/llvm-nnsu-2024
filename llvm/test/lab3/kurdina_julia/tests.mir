@@ -1,181 +1,116 @@
+# RUN: llc -mtriple x86_64-unknown-linux-gnu --load=%llvmshlibdir/X86KurdinaPass%shlibext -run-pass=x86-mul-add-pass  %s -o - | FileCheck %s
+
+# source_tmp.cpp
+
+# __m128d muladd_test1(__m128d a, __m128d b, __m128d c) 
+#   { return a * b + c; }
+
+# __m128d muladd_test2(__m128d a, __m128d b, __m128d c) {
+#   __m128d tmp = a * b;
+#   __m128d d = tmp + c;
+#   return d;
+# }
+
+# __m128d muladd_test3(__m128d a, __m128d b, __m128d c) {
+#   __m128d tmp = a * c + b;
+#   return tmp * c + b;
+# }
+
+# __m128d muladd_test4(__m128d a, __m128d b, __m128d c) {
+#   __m128d tmp = a * c;
+#   tmp = tmp / b;
+#   return tmp + b;
+# }
+
+# __m128d muladd_test5(__m128d a, __m128d b, __m128d c) {
+#   __m128d tmp = a * b;
+#   __m128d tmp2 = b + a - c;
+#   return tmp + c + tmp2;
+# }
+
+# __m128d muladd_test6(__m128d a, __m128d b, __m128d c) {
+#   __m128d tmp = a * b;
+#   __m128d tmp2 = tmp + c;
+#   return tmp + tmp2;
+# }
+
+# __m128d swap_addpd(__m128d a, __m128d b, __m128d c) {
+#   __m128d tmp = a * b;
+#   return tmp + tmp;
+# }
+
 --- |
-  ; ModuleID = 'tests.ll'
-  source_filename = "tests.cpp"
-  target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
-  target triple = "x86_64-pc-windows-msvc19.36.32532"
+  ; ModuleID = 'source_tmp.ll'
+  source_filename = "source_tmp.cpp"
+  target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
+  target triple = "x86_64-unknown-linux-gnu"
   
-  ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-  define dso_local noundef <2 x double> @"?muladd_test1@@YA?AU__m128d@@U1@00@Z"(<2 x double> noundef %a, <2 x double> noundef %b, <2 x double> noundef %c) #0 {
+  ; Function Attrs: mustprogress nofree nosync nounwind willreturn memory(none) uwtable
+  define dso_local noundef <2 x double> @"?muladd_test1@@YA?AU__m128d@@U1@00@Z"(<2 x double> noundef %a, <2 x double> noundef %b, <2 x double> noundef %c) local_unnamed_addr #0 {
   entry:
-    %c.addr = alloca <2 x double>, align 16
-    %b.addr = alloca <2 x double>, align 16
-    %a.addr = alloca <2 x double>, align 16
-    store <2 x double> %c, ptr %c.addr, align 16
-    store <2 x double> %b, ptr %b.addr, align 16
-    store <2 x double> %a, ptr %a.addr, align 16
-    %0 = load <2 x double>, ptr %a.addr, align 16
-    %1 = load <2 x double>, ptr %b.addr, align 16
-    %2 = load <2 x double>, ptr %c.addr, align 16
-    %3 = call <2 x double> @llvm.fmuladd.v2f64(<2 x double> %0, <2 x double> %1, <2 x double> %2)
-    ret <2 x double> %3
+    %0 = tail call <2 x double> @llvm.fmuladd.v2f64(<2 x double> %a, <2 x double> %b, <2 x double> %c)
+    ret <2 x double> %0
   }
   
   ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
   declare <2 x double> @llvm.fmuladd.v2f64(<2 x double>, <2 x double>, <2 x double>) #1
   
-  ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-  define dso_local noundef <2 x double> @"?muladd_test2@@YA?AU__m128d@@U1@00@Z"(<2 x double> noundef %a, <2 x double> noundef %b, <2 x double> noundef %c) #0 {
+  ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none) uwtable
+  define dso_local noundef <2 x double> @"?muladd_test2@@YA?AU__m128d@@U1@00@Z"(<2 x double> noundef %a, <2 x double> noundef %b, <2 x double> noundef %c) local_unnamed_addr #2 {
   entry:
-    %c.addr = alloca <2 x double>, align 16
-    %b.addr = alloca <2 x double>, align 16
-    %a.addr = alloca <2 x double>, align 16
-    %tmp = alloca <2 x double>, align 16
-    store <2 x double> %c, ptr %c.addr, align 16
-    store <2 x double> %b, ptr %b.addr, align 16
-    store <2 x double> %a, ptr %a.addr, align 16
-    %0 = load <2 x double>, ptr %a.addr, align 16
-    %1 = load <2 x double>, ptr %b.addr, align 16
-    %mul = fmul <2 x double> %0, %1
-    store <2 x double> %mul, ptr %tmp, align 16
-    %2 = load <2 x double>, ptr %tmp, align 16
-    %3 = load <2 x double>, ptr %c.addr, align 16
-    %add = fadd <2 x double> %2, %3
-    store <2 x double> %add, ptr %tmp, align 16
-    %4 = load <2 x double>, ptr %tmp, align 16
-    ret <2 x double> %4
-  }
-  
-  ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-  define dso_local noundef <2 x double> @"?muladd_test3@@YA?AU__m128d@@U1@00@Z"(<2 x double> noundef %a, <2 x double> noundef %b, <2 x double> noundef %c) #0 {
-  entry:
-    %c.addr = alloca <2 x double>, align 16
-    %b.addr = alloca <2 x double>, align 16
-    %a.addr = alloca <2 x double>, align 16
-    %tmp = alloca <2 x double>, align 16
-    store <2 x double> %c, ptr %c.addr, align 16
-    store <2 x double> %b, ptr %b.addr, align 16
-    store <2 x double> %a, ptr %a.addr, align 16
-    %0 = load <2 x double>, ptr %a.addr, align 16
-    %1 = load <2 x double>, ptr %c.addr, align 16
-    %2 = load <2 x double>, ptr %b.addr, align 16
-    %3 = call <2 x double> @llvm.fmuladd.v2f64(<2 x double> %0, <2 x double> %1, <2 x double> %2)
-    store <2 x double> %3, ptr %tmp, align 16
-    %4 = load <2 x double>, ptr %tmp, align 16
-    %5 = load <2 x double>, ptr %c.addr, align 16
-    %6 = load <2 x double>, ptr %b.addr, align 16
-    %7 = call <2 x double> @llvm.fmuladd.v2f64(<2 x double> %4, <2 x double> %5, <2 x double> %6)
-    ret <2 x double> %7
-  }
-  
-  ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-  define dso_local noundef <2 x double> @"?muladd_test4@@YA?AU__m128d@@U1@00@Z"(<2 x double> noundef %a, <2 x double> noundef %b, <2 x double> noundef %c) #0 {
-  entry:
-    %c.addr = alloca <2 x double>, align 16
-    %b.addr = alloca <2 x double>, align 16
-    %a.addr = alloca <2 x double>, align 16
-    %tmp = alloca <2 x double>, align 16
-    store <2 x double> %c, ptr %c.addr, align 16
-    store <2 x double> %b, ptr %b.addr, align 16
-    store <2 x double> %a, ptr %a.addr, align 16
-    %0 = load <2 x double>, ptr %a.addr, align 16
-    %1 = load <2 x double>, ptr %c.addr, align 16
-    %mul = fmul <2 x double> %0, %1
-    store <2 x double> %mul, ptr %tmp, align 16
-    %2 = load <2 x double>, ptr %tmp, align 16
-    %3 = load <2 x double>, ptr %b.addr, align 16
-    %div = fdiv <2 x double> %2, %3
-    store <2 x double> %div, ptr %tmp, align 16
-    %4 = load <2 x double>, ptr %tmp, align 16
-    %5 = load <2 x double>, ptr %b.addr, align 16
-    %add = fadd <2 x double> %4, %5
+    %mul = fmul <2 x double> %a, %b
+    %add = fadd <2 x double> %mul, %c
     ret <2 x double> %add
   }
   
-  ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-  define dso_local noundef <2 x double> @"?muladd_test5@@YA?AU__m128d@@U1@00@Z"(<2 x double> noundef %a, <2 x double> noundef %b, <2 x double> noundef %c) #0 {
+  ; Function Attrs: mustprogress nofree nosync nounwind willreturn memory(none) uwtable
+  define dso_local noundef <2 x double> @"?muladd_test3@@YA?AU__m128d@@U1@00@Z"(<2 x double> noundef %a, <2 x double> noundef %b, <2 x double> noundef %c) local_unnamed_addr #0 {
   entry:
-    %c.addr = alloca <2 x double>, align 16
-    %b.addr = alloca <2 x double>, align 16
-    %a.addr = alloca <2 x double>, align 16
-    %tmp = alloca <2 x double>, align 16
-    %tmp2 = alloca <2 x double>, align 16
-    store <2 x double> %c, ptr %c.addr, align 16
-    store <2 x double> %b, ptr %b.addr, align 16
-    store <2 x double> %a, ptr %a.addr, align 16
-    %0 = load <2 x double>, ptr %a.addr, align 16
-    %1 = load <2 x double>, ptr %b.addr, align 16
-    %mul = fmul <2 x double> %0, %1
-    store <2 x double> %mul, ptr %tmp, align 16
-    %2 = load <2 x double>, ptr %b.addr, align 16
-    %3 = load <2 x double>, ptr %a.addr, align 16
-    %add = fadd <2 x double> %2, %3
-    %4 = load <2 x double>, ptr %c.addr, align 16
-    %sub = fsub <2 x double> %add, %4
-    store <2 x double> %sub, ptr %tmp2, align 16
-    %5 = load <2 x double>, ptr %tmp, align 16
-    %6 = load <2 x double>, ptr %c.addr, align 16
-    %add1 = fadd <2 x double> %5, %6
-    %7 = load <2 x double>, ptr %tmp2, align 16
-    %add2 = fadd <2 x double> %add1, %7
+    %0 = tail call <2 x double> @llvm.fmuladd.v2f64(<2 x double> %a, <2 x double> %c, <2 x double> %b)
+    %1 = tail call <2 x double> @llvm.fmuladd.v2f64(<2 x double> %0, <2 x double> %c, <2 x double> %b)
+    ret <2 x double> %1
+  }
+  
+  ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none) uwtable
+  define dso_local noundef <2 x double> @"?muladd_test4@@YA?AU__m128d@@U1@00@Z"(<2 x double> noundef %a, <2 x double> noundef %b, <2 x double> noundef %c) local_unnamed_addr #2 {
+  entry:
+    %mul = fmul <2 x double> %a, %c
+    %div = fdiv <2 x double> %mul, %b
+    %add = fadd <2 x double> %div, %b
+    ret <2 x double> %add
+  }
+  
+  ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none) uwtable
+  define dso_local noundef <2 x double> @"?muladd_test5@@YA?AU__m128d@@U1@00@Z"(<2 x double> noundef %a, <2 x double> noundef %b, <2 x double> noundef %c) local_unnamed_addr #2 {
+  entry:
+    %mul = fmul <2 x double> %a, %b
+    %add = fadd <2 x double> %a, %b
+    %sub = fsub <2 x double> %add, %c
+    %add1 = fadd <2 x double> %mul, %c
+    %add2 = fadd <2 x double> %add1, %sub
     ret <2 x double> %add2
   }
   
-  ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-  define dso_local noundef <2 x double> @"?muladd_test6@@YA?AU__m128d@@U1@00@Z"(<2 x double> noundef %a, <2 x double> noundef %b, <2 x double> noundef %c) #0 {
+  ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none) uwtable
+  define dso_local noundef <2 x double> @"?muladd_test6@@YA?AU__m128d@@U1@00@Z"(<2 x double> noundef %a, <2 x double> noundef %b, <2 x double> noundef %c) local_unnamed_addr #2 {
   entry:
-    %c.addr = alloca <2 x double>, align 16
-    %b.addr = alloca <2 x double>, align 16
-    %a.addr = alloca <2 x double>, align 16
-    %tmp = alloca <2 x double>, align 16
-    %tmp2 = alloca <2 x double>, align 16
-    store <2 x double> %c, ptr %c.addr, align 16
-    store <2 x double> %b, ptr %b.addr, align 16
-    store <2 x double> %a, ptr %a.addr, align 16
-    %0 = load <2 x double>, ptr %a.addr, align 16
-    %1 = load <2 x double>, ptr %b.addr, align 16
-    %mul = fmul <2 x double> %0, %1
-    store <2 x double> %mul, ptr %tmp, align 16
-    %2 = load <2 x double>, ptr %tmp, align 16
-    %3 = load <2 x double>, ptr %c.addr, align 16
-    %add = fadd <2 x double> %2, %3
-    store <2 x double> %add, ptr %tmp2, align 16
-    %4 = load <2 x double>, ptr %tmp, align 16
-    %5 = load <2 x double>, ptr %c.addr, align 16
-    %mul1 = fmul <2 x double> %4, %5
-    ret <2 x double> %mul1
+    %mul = fmul <2 x double> %a, %b
+    %add = fadd <2 x double> %mul, %c
+    %add1 = fadd <2 x double> %mul, %add
+    ret <2 x double> %add1
   }
   
-  ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-  define dso_local noundef <2 x double> @"?swap_addpd@@YA?AU__m128d@@U1@00@Z"(<2 x double> noundef %a, <2 x double> noundef %b, <2 x double> noundef %c) #0 {
+  ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none) uwtable
+  define dso_local noundef <2 x double> @"?muladd_test7@@YA?AU__m128d@@U1@00@Z"(<2 x double> noundef %a, <2 x double> noundef %b, <2 x double> noundef %c) local_unnamed_addr #2 {
   entry:
-    %c.addr = alloca <2 x double>, align 16
-    %b.addr = alloca <2 x double>, align 16
-    %a.addr = alloca <2 x double>, align 16
-    %tmp = alloca <2 x double>, align 16
-    %tmp2 = alloca <2 x double>, align 16
-    %tmp3 = alloca <2 x double>, align 16
-    store <2 x double> %c, ptr %c.addr, align 16
-    store <2 x double> %b, ptr %b.addr, align 16
-    store <2 x double> %a, ptr %a.addr, align 16
-    %0 = load <2 x double>, ptr %c.addr, align 16
-    %1 = load <2 x double>, ptr %b.addr, align 16
-    %mul = fmul <2 x double> %0, %1
-    store <2 x double> %mul, ptr %tmp, align 16
-    %2 = load <2 x double>, ptr %c.addr, align 16
-    %3 = load <2 x double>, ptr %b.addr, align 16
-    %div = fdiv <2 x double> %2, %3
-    store <2 x double> %div, ptr %tmp2, align 16
-    %4 = load <2 x double>, ptr %tmp2, align 16
-    %5 = load <2 x double>, ptr %tmp, align 16
-    %add = fadd <2 x double> %4, %5
-    store <2 x double> %add, ptr %tmp3, align 16
-    %6 = load <2 x double>, ptr %tmp3, align 16
-    %sub = fsub <2 x double> %6, <double 2.000000e+00, double 2.000000e+00>
-    ret <2 x double> %sub
+    %mul = fmul <2 x double> %a, %b
+    %add = fadd <2 x double> %mul, %mul
+    ret <2 x double> %add
   }
   
-  attributes #0 = { mustprogress noinline nounwind optnone uwtable "min-legal-vector-width"="128" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
+  attributes #0 = { mustprogress nofree nosync nounwind willreturn memory(none) uwtable "min-legal-vector-width"="128" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
   attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+  attributes #2 = { mustprogress nofree norecurse nosync nounwind willreturn memory(none) uwtable "min-legal-vector-width"="128" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
   
   !llvm.module.flags = !{!0, !1, !2, !3}
   !llvm.ident = !{!4}
@@ -203,28 +138,14 @@ hasEHCatchret:   false
 hasEHScopes:     false
 hasEHFunclets:   false
 isOutlined:      false
-debugInstrRef:   false
+debugInstrRef:   true
 failsVerification: false
-tracksDebugUserValues: false
-registers:
-  - { id: 0, class: gr64, preferred-register: '' }
-  - { id: 1, class: gr64, preferred-register: '' }
-  - { id: 2, class: gr64, preferred-register: '' }
-  - { id: 3, class: vr128, preferred-register: '' }
-  - { id: 4, class: vr128, preferred-register: '' }
-  - { id: 5, class: vr128, preferred-register: '' }
-  - { id: 6, class: vr128, preferred-register: '' }
-  - { id: 7, class: vr128, preferred-register: '' }
-  - { id: 8, class: vr128, preferred-register: '' }
-  - { id: 9, class: vr128, preferred-register: '' }
-  - { id: 10, class: vr128, preferred-register: '' }
-  - { id: 11, class: vr128, preferred-register: '' }
-  - { id: 12, class: vr128, preferred-register: '' }
-  - { id: 13, class: vr128, preferred-register: '' }
+tracksDebugUserValues: true
+registers:       []
 liveins:
-  - { reg: '$rcx', virtual-reg: '%0' }
-  - { reg: '$rdx', virtual-reg: '%1' }
-  - { reg: '$r8', virtual-reg: '%2' }
+  - { reg: '$xmm0', virtual-reg: '' }
+  - { reg: '$xmm1', virtual-reg: '' }
+  - { reg: '$xmm2', virtual-reg: '' }
 frameInfo:
   isFrameAddressTaken: false
   isReturnAddressTaken: false
@@ -232,12 +153,12 @@ frameInfo:
   hasPatchPoint:   false
   stackSize:       0
   offsetAdjustment: 0
-  maxAlignment:    16
+  maxAlignment:    1
   adjustsStack:    false
   hasCalls:        false
   stackProtector:  ''
   functionContext: ''
-  maxCallFrameSize: 4294967295
+  maxCallFrameSize: 0
   cvBytesOfCalleeSavedRegisters: 0
   hasOpaqueSPAdjustment: false
   hasVAStart:      false
@@ -247,16 +168,7 @@ frameInfo:
   savePoint:       ''
   restorePoint:    ''
 fixedStack:      []
-stack:
-  - { id: 0, name: c.addr, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
-  - { id: 1, name: b.addr, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
-  - { id: 2, name: a.addr, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
+stack:           []
 entry_values:    []
 callSites:       []
 debugValueSubstitutions: []
@@ -264,24 +176,14 @@ constants:       []
 machineFunctionInfo: {}
 body:             |
   bb.0.entry:
-    liveins: $rcx, $rdx, $r8
+    liveins: $xmm0, $xmm1, $xmm2
   
-    %2:gr64 = COPY $r8
-    %1:gr64 = COPY $rdx
-    %0:gr64 = COPY $rcx
-    %5:vr128 = MOVAPDrm %2, 1, $noreg, 0, $noreg :: (load (s128))
-    %4:vr128 = MOVAPDrm %1, 1, $noreg, 0, $noreg :: (load (s128))
-    %3:vr128 = MOVAPDrm %0, 1, $noreg, 0, $noreg :: (load (s128))
-    MOVAPDmr %stack.0.c.addr, 1, $noreg, 0, $noreg, %5 :: (store (s128) into %ir.c.addr)
-    MOVAPDmr %stack.1.b.addr, 1, $noreg, 0, $noreg, %4 :: (store (s128) into %ir.b.addr)
-    MOVAPDmr %stack.2.a.addr, 1, $noreg, 0, $noreg, %3 :: (store (s128) into %ir.a.addr)
-    %13:vr128 = MOVAPDrm %stack.2.a.addr, 1, $noreg, 0, $noreg :: (load (s128) from %ir.a.addr)
-    %12:vr128 = MOVAPDrm %stack.1.b.addr, 1, $noreg, 0, $noreg :: (load (s128) from %ir.b.addr)
-    %11:vr128 = MOVAPDrm %stack.0.c.addr, 1, $noreg, 0, $noreg :: (load (s128) from %ir.c.addr)
-    %10:vr128 = nofpexcept MULPDrr %13, %12, implicit $mxcsr
-    %6:vr128 = nofpexcept ADDPDrr %10, %11, implicit $mxcsr
-    $xmm0 = COPY %6
-    RET64 implicit $xmm0
+    renamable $xmm0 = nofpexcept MULPDrr killed renamable $xmm0, killed renamable $xmm1, implicit $mxcsr
+    renamable $xmm0 = nofpexcept ADDPDrr killed renamable $xmm0, killed renamable $xmm2, implicit $mxcsr
+    RET64 $xmm0
+
+    ; CHECK: $xmm0 = VFMADD213PDZ128r $xmm0, $xmm1, $xmm2, implicit $mxcsr
+    ; CHECK-NEXT: RET64 $xmm0
 
 ...
 ---
@@ -300,32 +202,14 @@ hasEHCatchret:   false
 hasEHScopes:     false
 hasEHFunclets:   false
 isOutlined:      false
-debugInstrRef:   false
+debugInstrRef:   true
 failsVerification: false
-tracksDebugUserValues: false
-registers:
-  - { id: 0, class: gr64, preferred-register: '' }
-  - { id: 1, class: gr64, preferred-register: '' }
-  - { id: 2, class: gr64, preferred-register: '' }
-  - { id: 3, class: vr128, preferred-register: '' }
-  - { id: 4, class: vr128, preferred-register: '' }
-  - { id: 5, class: vr128, preferred-register: '' }
-  - { id: 6, class: vr128, preferred-register: '' }
-  - { id: 7, class: vr128, preferred-register: '' }
-  - { id: 8, class: vr128, preferred-register: '' }
-  - { id: 9, class: vr128, preferred-register: '' }
-  - { id: 10, class: vr128, preferred-register: '' }
-  - { id: 11, class: vr128, preferred-register: '' }
-  - { id: 12, class: vr128, preferred-register: '' }
-  - { id: 13, class: vr128, preferred-register: '' }
-  - { id: 14, class: vr128, preferred-register: '' }
-  - { id: 15, class: vr128, preferred-register: '' }
-  - { id: 16, class: vr128, preferred-register: '' }
-  - { id: 17, class: vr128, preferred-register: '' }
+tracksDebugUserValues: true
+registers:       []
 liveins:
-  - { reg: '$rcx', virtual-reg: '%0' }
-  - { reg: '$rdx', virtual-reg: '%1' }
-  - { reg: '$r8', virtual-reg: '%2' }
+  - { reg: '$xmm0', virtual-reg: '' }
+  - { reg: '$xmm1', virtual-reg: '' }
+  - { reg: '$xmm2', virtual-reg: '' }
 frameInfo:
   isFrameAddressTaken: false
   isReturnAddressTaken: false
@@ -333,12 +217,12 @@ frameInfo:
   hasPatchPoint:   false
   stackSize:       0
   offsetAdjustment: 0
-  maxAlignment:    16
+  maxAlignment:    1
   adjustsStack:    false
   hasCalls:        false
   stackProtector:  ''
   functionContext: ''
-  maxCallFrameSize: 4294967295
+  maxCallFrameSize: 0
   cvBytesOfCalleeSavedRegisters: 0
   hasOpaqueSPAdjustment: false
   hasVAStart:      false
@@ -348,19 +232,7 @@ frameInfo:
   savePoint:       ''
   restorePoint:    ''
 fixedStack:      []
-stack:
-  - { id: 0, name: c.addr, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
-  - { id: 1, name: b.addr, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
-  - { id: 2, name: a.addr, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
-  - { id: 3, name: tmp, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
+stack:           []
 entry_values:    []
 callSites:       []
 debugValueSubstitutions: []
@@ -368,26 +240,14 @@ constants:       []
 machineFunctionInfo: {}
 body:             |
   bb.0.entry:
-    liveins: $rcx, $rdx, $r8
+    liveins: $xmm0, $xmm1, $xmm2
   
-    %2:gr64 = COPY $r8
-    %1:gr64 = COPY $rdx
-    %0:gr64 = COPY $rcx
-    %5:vr128 = MOVAPDrm %2, 1, $noreg, 0, $noreg :: (load (s128))
-    %4:vr128 = MOVAPDrm %1, 1, $noreg, 0, $noreg :: (load (s128))
-    %3:vr128 = MOVAPDrm %0, 1, $noreg, 0, $noreg :: (load (s128))
-    MOVAPDmr %stack.0.c.addr, 1, $noreg, 0, $noreg, %5 :: (store (s128) into %ir.c.addr)
-    MOVAPDmr %stack.1.b.addr, 1, $noreg, 0, $noreg, %4 :: (store (s128) into %ir.b.addr)
-    MOVAPDmr %stack.2.a.addr, 1, $noreg, 0, $noreg, %3 :: (store (s128) into %ir.a.addr)
-    %17:vr128 = MOVAPDrm %stack.2.a.addr, 1, $noreg, 0, $noreg :: (load (s128) from %ir.a.addr)
-    %16:vr128 = MULPDrm %17, %stack.1.b.addr, 1, $noreg, 0, $noreg, implicit $mxcsr :: (load (s128) from %ir.b.addr)
-    MOVAPDmr %stack.3.tmp, 1, $noreg, 0, $noreg, %16 :: (store (s128) into %ir.tmp)
-    %12:vr128 = MOVAPDrm %stack.3.tmp, 1, $noreg, 0, $noreg :: (load (s128) from %ir.tmp)
-    %11:vr128 = ADDPDrm %12, %stack.0.c.addr, 1, $noreg, 0, $noreg, implicit $mxcsr :: (load (s128) from %ir.c.addr)
-    MOVAPDmr %stack.3.tmp, 1, $noreg, 0, $noreg, %11 :: (store (s128) into %ir.tmp)
-    %7:vr128 = MOVAPDrm %stack.3.tmp, 1, $noreg, 0, $noreg :: (load (s128) from %ir.tmp)
-    $xmm0 = COPY %7
-    RET64 implicit $xmm0
+    renamable $xmm0 = nofpexcept MULPDrr killed renamable $xmm0, killed renamable $xmm1, implicit $mxcsr
+    renamable $xmm0 = nofpexcept ADDPDrr killed renamable $xmm0, killed renamable $xmm2, implicit $mxcsr
+    RET64 $xmm0
+
+    ; CHECK: $xmm0 = VFMADD213PDZ128r $xmm0, $xmm1, $xmm2, implicit $mxcsr
+    ; CHECK-NEXT: RET64 $xmm0
 
 ...
 ---
@@ -406,36 +266,14 @@ hasEHCatchret:   false
 hasEHScopes:     false
 hasEHFunclets:   false
 isOutlined:      false
-debugInstrRef:   false
+debugInstrRef:   true
 failsVerification: false
-tracksDebugUserValues: false
-registers:
-  - { id: 0, class: gr64, preferred-register: '' }
-  - { id: 1, class: gr64, preferred-register: '' }
-  - { id: 2, class: gr64, preferred-register: '' }
-  - { id: 3, class: vr128, preferred-register: '' }
-  - { id: 4, class: vr128, preferred-register: '' }
-  - { id: 5, class: vr128, preferred-register: '' }
-  - { id: 6, class: vr128, preferred-register: '' }
-  - { id: 7, class: vr128, preferred-register: '' }
-  - { id: 8, class: vr128, preferred-register: '' }
-  - { id: 9, class: vr128, preferred-register: '' }
-  - { id: 10, class: vr128, preferred-register: '' }
-  - { id: 11, class: vr128, preferred-register: '' }
-  - { id: 12, class: vr128, preferred-register: '' }
-  - { id: 13, class: vr128, preferred-register: '' }
-  - { id: 14, class: vr128, preferred-register: '' }
-  - { id: 15, class: vr128, preferred-register: '' }
-  - { id: 16, class: vr128, preferred-register: '' }
-  - { id: 17, class: vr128, preferred-register: '' }
-  - { id: 18, class: vr128, preferred-register: '' }
-  - { id: 19, class: vr128, preferred-register: '' }
-  - { id: 20, class: vr128, preferred-register: '' }
-  - { id: 21, class: vr128, preferred-register: '' }
+tracksDebugUserValues: true
+registers:       []
 liveins:
-  - { reg: '$rcx', virtual-reg: '%0' }
-  - { reg: '$rdx', virtual-reg: '%1' }
-  - { reg: '$r8', virtual-reg: '%2' }
+  - { reg: '$xmm0', virtual-reg: '' }
+  - { reg: '$xmm1', virtual-reg: '' }
+  - { reg: '$xmm2', virtual-reg: '' }
 frameInfo:
   isFrameAddressTaken: false
   isReturnAddressTaken: false
@@ -443,12 +281,12 @@ frameInfo:
   hasPatchPoint:   false
   stackSize:       0
   offsetAdjustment: 0
-  maxAlignment:    16
+  maxAlignment:    1
   adjustsStack:    false
   hasCalls:        false
   stackProtector:  ''
   functionContext: ''
-  maxCallFrameSize: 4294967295
+  maxCallFrameSize: 0
   cvBytesOfCalleeSavedRegisters: 0
   hasOpaqueSPAdjustment: false
   hasVAStart:      false
@@ -458,19 +296,7 @@ frameInfo:
   savePoint:       ''
   restorePoint:    ''
 fixedStack:      []
-stack:
-  - { id: 0, name: c.addr, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
-  - { id: 1, name: b.addr, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
-  - { id: 2, name: a.addr, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
-  - { id: 3, name: tmp, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
+stack:           []
 entry_values:    []
 callSites:       []
 debugValueSubstitutions: []
@@ -478,30 +304,17 @@ constants:       []
 machineFunctionInfo: {}
 body:             |
   bb.0.entry:
-    liveins: $rcx, $rdx, $r8
+    liveins: $xmm0, $xmm1, $xmm2
   
-    %2:gr64 = COPY $r8
-    %1:gr64 = COPY $rdx
-    %0:gr64 = COPY $rcx
-    %5:vr128 = MOVAPDrm %2, 1, $noreg, 0, $noreg :: (load (s128))
-    %4:vr128 = MOVAPDrm %1, 1, $noreg, 0, $noreg :: (load (s128))
-    %3:vr128 = MOVAPDrm %0, 1, $noreg, 0, $noreg :: (load (s128))
-    MOVAPDmr %stack.0.c.addr, 1, $noreg, 0, $noreg, %5 :: (store (s128) into %ir.c.addr)
-    MOVAPDmr %stack.1.b.addr, 1, $noreg, 0, $noreg, %4 :: (store (s128) into %ir.b.addr)
-    MOVAPDmr %stack.2.a.addr, 1, $noreg, 0, $noreg, %3 :: (store (s128) into %ir.a.addr)
-    %21:vr128 = MOVAPDrm %stack.2.a.addr, 1, $noreg, 0, $noreg :: (load (s128) from %ir.a.addr)
-    %20:vr128 = MOVAPDrm %stack.0.c.addr, 1, $noreg, 0, $noreg :: (load (s128) from %ir.c.addr)
-    %19:vr128 = MOVAPDrm %stack.1.b.addr, 1, $noreg, 0, $noreg :: (load (s128) from %ir.b.addr)
-    %18:vr128 = nofpexcept MULPDrr %21, %20, implicit $mxcsr
-    %14:vr128 = nofpexcept ADDPDrr %18, %19, implicit $mxcsr
-    MOVAPDmr %stack.3.tmp, 1, $noreg, 0, $noreg, %14 :: (store (s128) into %ir.tmp)
-    %13:vr128 = MOVAPDrm %stack.3.tmp, 1, $noreg, 0, $noreg :: (load (s128) from %ir.tmp)
-    %12:vr128 = MOVAPDrm %stack.0.c.addr, 1, $noreg, 0, $noreg :: (load (s128) from %ir.c.addr)
-    %11:vr128 = MOVAPDrm %stack.1.b.addr, 1, $noreg, 0, $noreg :: (load (s128) from %ir.b.addr)
-    %10:vr128 = nofpexcept MULPDrr %13, %12, implicit $mxcsr
-    %6:vr128 = nofpexcept ADDPDrr %10, %11, implicit $mxcsr
-    $xmm0 = COPY %6
-    RET64 implicit $xmm0
+    renamable $xmm0 = nofpexcept MULPDrr killed renamable $xmm0, renamable $xmm2, implicit $mxcsr
+    renamable $xmm0 = nofpexcept ADDPDrr killed renamable $xmm0, renamable $xmm1, implicit $mxcsr
+    renamable $xmm0 = nofpexcept MULPDrr killed renamable $xmm0, killed renamable $xmm2, implicit $mxcsr
+    renamable $xmm0 = nofpexcept ADDPDrr killed renamable $xmm0, killed renamable $xmm1, implicit $mxcsr
+    RET64 $xmm0
+
+    ; CHECK: $xmm0 = VFMADD213PDZ128r $xmm0, $xmm2, $xmm1, implicit $mxcsr
+    ; CHECK-NEXT: $xmm0 = VFMADD213PDZ128r $xmm0, $xmm2, $xmm1, implicit $mxcsr
+    ; CHECK-NEXT: RET64 $xmm0
 
 ...
 ---
@@ -520,35 +333,14 @@ hasEHCatchret:   false
 hasEHScopes:     false
 hasEHFunclets:   false
 isOutlined:      false
-debugInstrRef:   false
+debugInstrRef:   true
 failsVerification: false
-tracksDebugUserValues: false
-registers:
-  - { id: 0, class: gr64, preferred-register: '' }
-  - { id: 1, class: gr64, preferred-register: '' }
-  - { id: 2, class: gr64, preferred-register: '' }
-  - { id: 3, class: vr128, preferred-register: '' }
-  - { id: 4, class: vr128, preferred-register: '' }
-  - { id: 5, class: vr128, preferred-register: '' }
-  - { id: 6, class: vr128, preferred-register: '' }
-  - { id: 7, class: vr128, preferred-register: '' }
-  - { id: 8, class: vr128, preferred-register: '' }
-  - { id: 9, class: vr128, preferred-register: '' }
-  - { id: 10, class: vr128, preferred-register: '' }
-  - { id: 11, class: vr128, preferred-register: '' }
-  - { id: 12, class: vr128, preferred-register: '' }
-  - { id: 13, class: vr128, preferred-register: '' }
-  - { id: 14, class: vr128, preferred-register: '' }
-  - { id: 15, class: vr128, preferred-register: '' }
-  - { id: 16, class: vr128, preferred-register: '' }
-  - { id: 17, class: vr128, preferred-register: '' }
-  - { id: 18, class: vr128, preferred-register: '' }
-  - { id: 19, class: vr128, preferred-register: '' }
-  - { id: 20, class: vr128, preferred-register: '' }
+tracksDebugUserValues: true
+registers:       []
 liveins:
-  - { reg: '$rcx', virtual-reg: '%0' }
-  - { reg: '$rdx', virtual-reg: '%1' }
-  - { reg: '$r8', virtual-reg: '%2' }
+  - { reg: '$xmm0', virtual-reg: '' }
+  - { reg: '$xmm1', virtual-reg: '' }
+  - { reg: '$xmm2', virtual-reg: '' }
 frameInfo:
   isFrameAddressTaken: false
   isReturnAddressTaken: false
@@ -556,12 +348,12 @@ frameInfo:
   hasPatchPoint:   false
   stackSize:       0
   offsetAdjustment: 0
-  maxAlignment:    16
+  maxAlignment:    1
   adjustsStack:    false
   hasCalls:        false
   stackProtector:  ''
   functionContext: ''
-  maxCallFrameSize: 4294967295
+  maxCallFrameSize: 0
   cvBytesOfCalleeSavedRegisters: 0
   hasOpaqueSPAdjustment: false
   hasVAStart:      false
@@ -571,19 +363,7 @@ frameInfo:
   savePoint:       ''
   restorePoint:    ''
 fixedStack:      []
-stack:
-  - { id: 0, name: c.addr, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
-  - { id: 1, name: b.addr, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
-  - { id: 2, name: a.addr, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
-  - { id: 3, name: tmp, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
+stack:           []
 entry_values:    []
 callSites:       []
 debugValueSubstitutions: []
@@ -591,27 +371,17 @@ constants:       []
 machineFunctionInfo: {}
 body:             |
   bb.0.entry:
-    liveins: $rcx, $rdx, $r8
+    liveins: $xmm0, $xmm1, $xmm2
   
-    %2:gr64 = COPY $r8
-    %1:gr64 = COPY $rdx
-    %0:gr64 = COPY $rcx
-    %5:vr128 = MOVAPDrm %2, 1, $noreg, 0, $noreg :: (load (s128))
-    %4:vr128 = MOVAPDrm %1, 1, $noreg, 0, $noreg :: (load (s128))
-    %3:vr128 = MOVAPDrm %0, 1, $noreg, 0, $noreg :: (load (s128))
-    MOVAPDmr %stack.0.c.addr, 1, $noreg, 0, $noreg, %5 :: (store (s128) into %ir.c.addr)
-    MOVAPDmr %stack.1.b.addr, 1, $noreg, 0, $noreg, %4 :: (store (s128) into %ir.b.addr)
-    MOVAPDmr %stack.2.a.addr, 1, $noreg, 0, $noreg, %3 :: (store (s128) into %ir.a.addr)
-    %20:vr128 = MOVAPDrm %stack.2.a.addr, 1, $noreg, 0, $noreg :: (load (s128) from %ir.a.addr)
-    %19:vr128 = MULPDrm %20, %stack.0.c.addr, 1, $noreg, 0, $noreg, implicit $mxcsr :: (load (s128) from %ir.c.addr)
-    MOVAPDmr %stack.3.tmp, 1, $noreg, 0, $noreg, %19 :: (store (s128) into %ir.tmp)
-    %15:vr128 = MOVAPDrm %stack.3.tmp, 1, $noreg, 0, $noreg :: (load (s128) from %ir.tmp)
-    %14:vr128 = DIVPDrm %15, %stack.1.b.addr, 1, $noreg, 0, $noreg, implicit $mxcsr :: (load (s128) from %ir.b.addr)
-    MOVAPDmr %stack.3.tmp, 1, $noreg, 0, $noreg, %14 :: (store (s128) into %ir.tmp)
-    %10:vr128 = MOVAPDrm %stack.3.tmp, 1, $noreg, 0, $noreg :: (load (s128) from %ir.tmp)
-    %9:vr128 = ADDPDrm %10, %stack.1.b.addr, 1, $noreg, 0, $noreg, implicit $mxcsr :: (load (s128) from %ir.b.addr)
-    $xmm0 = COPY %9
-    RET64 implicit $xmm0
+    renamable $xmm0 = nofpexcept MULPDrr killed renamable $xmm0, killed renamable $xmm2, implicit $mxcsr
+    renamable $xmm0 = nofpexcept DIVPDrr killed renamable $xmm0, renamable $xmm1, implicit $mxcsr
+    renamable $xmm0 = nofpexcept ADDPDrr killed renamable $xmm0, killed renamable $xmm1, implicit $mxcsr
+    RET64 $xmm0
+
+    ; CHECK: renamable $xmm0 = nofpexcept MULPDrr killed renamable $xmm0, killed renamable $xmm2, implicit $mxcsr
+    ; CHECK-NEXT: renamable $xmm0 = nofpexcept DIVPDrr killed renamable $xmm0, renamable $xmm1, implicit $mxcsr
+    ; CHECK-NEXT: renamable $xmm0 = nofpexcept ADDPDrr killed renamable $xmm0, killed renamable $xmm1, implicit $mxcsr
+    ; CHECK-NEXT: RET64 $xmm0
 
 ...
 ---
@@ -630,41 +400,14 @@ hasEHCatchret:   false
 hasEHScopes:     false
 hasEHFunclets:   false
 isOutlined:      false
-debugInstrRef:   false
+debugInstrRef:   true
 failsVerification: false
-tracksDebugUserValues: false
-registers:
-  - { id: 0, class: gr64, preferred-register: '' }
-  - { id: 1, class: gr64, preferred-register: '' }
-  - { id: 2, class: gr64, preferred-register: '' }
-  - { id: 3, class: vr128, preferred-register: '' }
-  - { id: 4, class: vr128, preferred-register: '' }
-  - { id: 5, class: vr128, preferred-register: '' }
-  - { id: 6, class: vr128, preferred-register: '' }
-  - { id: 7, class: vr128, preferred-register: '' }
-  - { id: 8, class: vr128, preferred-register: '' }
-  - { id: 9, class: vr128, preferred-register: '' }
-  - { id: 10, class: vr128, preferred-register: '' }
-  - { id: 11, class: vr128, preferred-register: '' }
-  - { id: 12, class: vr128, preferred-register: '' }
-  - { id: 13, class: vr128, preferred-register: '' }
-  - { id: 14, class: vr128, preferred-register: '' }
-  - { id: 15, class: vr128, preferred-register: '' }
-  - { id: 16, class: vr128, preferred-register: '' }
-  - { id: 17, class: vr128, preferred-register: '' }
-  - { id: 18, class: vr128, preferred-register: '' }
-  - { id: 19, class: vr128, preferred-register: '' }
-  - { id: 20, class: vr128, preferred-register: '' }
-  - { id: 21, class: vr128, preferred-register: '' }
-  - { id: 22, class: vr128, preferred-register: '' }
-  - { id: 23, class: vr128, preferred-register: '' }
-  - { id: 24, class: vr128, preferred-register: '' }
-  - { id: 25, class: vr128, preferred-register: '' }
-  - { id: 26, class: vr128, preferred-register: '' }
+tracksDebugUserValues: true
+registers:       []
 liveins:
-  - { reg: '$rcx', virtual-reg: '%0' }
-  - { reg: '$rdx', virtual-reg: '%1' }
-  - { reg: '$r8', virtual-reg: '%2' }
+  - { reg: '$xmm0', virtual-reg: '' }
+  - { reg: '$xmm1', virtual-reg: '' }
+  - { reg: '$xmm2', virtual-reg: '' }
 frameInfo:
   isFrameAddressTaken: false
   isReturnAddressTaken: false
@@ -672,12 +415,12 @@ frameInfo:
   hasPatchPoint:   false
   stackSize:       0
   offsetAdjustment: 0
-  maxAlignment:    16
+  maxAlignment:    1
   adjustsStack:    false
   hasCalls:        false
   stackProtector:  ''
   functionContext: ''
-  maxCallFrameSize: 4294967295
+  maxCallFrameSize: 0
   cvBytesOfCalleeSavedRegisters: 0
   hasOpaqueSPAdjustment: false
   hasVAStart:      false
@@ -687,22 +430,7 @@ frameInfo:
   savePoint:       ''
   restorePoint:    ''
 fixedStack:      []
-stack:
-  - { id: 0, name: c.addr, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
-  - { id: 1, name: b.addr, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
-  - { id: 2, name: a.addr, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
-  - { id: 3, name: tmp, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
-  - { id: 4, name: tmp2, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
+stack:           []
 entry_values:    []
 callSites:       []
 debugValueSubstitutions: []
@@ -710,29 +438,22 @@ constants:       []
 machineFunctionInfo: {}
 body:             |
   bb.0.entry:
-    liveins: $rcx, $rdx, $r8
+    liveins: $xmm0, $xmm1, $xmm2
   
-    %2:gr64 = COPY $r8
-    %1:gr64 = COPY $rdx
-    %0:gr64 = COPY $rcx
-    %5:vr128 = MOVAPDrm %2, 1, $noreg, 0, $noreg :: (load (s128))
-    %4:vr128 = MOVAPDrm %1, 1, $noreg, 0, $noreg :: (load (s128))
-    %3:vr128 = MOVAPDrm %0, 1, $noreg, 0, $noreg :: (load (s128))
-    MOVAPDmr %stack.0.c.addr, 1, $noreg, 0, $noreg, %5 :: (store (s128) into %ir.c.addr)
-    MOVAPDmr %stack.1.b.addr, 1, $noreg, 0, $noreg, %4 :: (store (s128) into %ir.b.addr)
-    MOVAPDmr %stack.2.a.addr, 1, $noreg, 0, $noreg, %3 :: (store (s128) into %ir.a.addr)
-    %26:vr128 = MOVAPDrm %stack.2.a.addr, 1, $noreg, 0, $noreg :: (load (s128) from %ir.a.addr)
-    %25:vr128 = MULPDrm %26, %stack.1.b.addr, 1, $noreg, 0, $noreg, implicit $mxcsr :: (load (s128) from %ir.b.addr)
-    MOVAPDmr %stack.3.tmp, 1, $noreg, 0, $noreg, %25 :: (store (s128) into %ir.tmp)
-    %21:vr128 = MOVAPDrm %stack.1.b.addr, 1, $noreg, 0, $noreg :: (load (s128) from %ir.b.addr)
-    %20:vr128 = ADDPDrm %21, %stack.2.a.addr, 1, $noreg, 0, $noreg, implicit $mxcsr :: (load (s128) from %ir.a.addr)
-    %17:vr128 = SUBPDrm %20, %stack.0.c.addr, 1, $noreg, 0, $noreg, implicit $mxcsr :: (load (s128) from %ir.c.addr)
-    MOVAPDmr %stack.4.tmp2, 1, $noreg, 0, $noreg, %17 :: (store (s128) into %ir.tmp2)
-    %13:vr128 = MOVAPDrm %stack.3.tmp, 1, $noreg, 0, $noreg :: (load (s128) from %ir.tmp)
-    %12:vr128 = ADDPDrm %13, %stack.0.c.addr, 1, $noreg, 0, $noreg, implicit $mxcsr :: (load (s128) from %ir.c.addr)
-    %9:vr128 = ADDPDrm %12, %stack.4.tmp2, 1, $noreg, 0, $noreg, implicit $mxcsr :: (load (s128) from %ir.tmp2)
-    $xmm0 = COPY %9
-    RET64 implicit $xmm0
+    $xmm3 = MOVAPDrr $xmm0
+    renamable $xmm3 = nofpexcept MULPDrr killed renamable $xmm3, renamable $xmm1, implicit $mxcsr
+    renamable $xmm0 = nofpexcept ADDPDrr killed renamable $xmm0, killed renamable $xmm1, implicit $mxcsr
+    renamable $xmm0 = nofpexcept SUBPDrr killed renamable $xmm0, renamable $xmm2, implicit $mxcsr
+    renamable $xmm3 = nofpexcept ADDPDrr killed renamable $xmm3, killed renamable $xmm2, implicit $mxcsr
+    renamable $xmm0 = nofpexcept ADDPDrr killed renamable $xmm0, killed renamable $xmm3, implicit $mxcsr
+    RET64 $xmm0
+
+    ; CHECK: $xmm3 = MOVAPDrr $xmm0
+    ; CHECK-NEXT: $xmm3 = VFMADD213PDZ128r $xmm3, $xmm1, $xmm2, implicit $mxcsr
+    ; CHECK-NEXT: renamable $xmm0 = nofpexcept ADDPDrr killed renamable $xmm0, killed renamable $xmm1, implicit $mxcsr
+    ; CHECK-NEXT: renamable $xmm0 = nofpexcept SUBPDrr killed renamable $xmm0, renamable $xmm2, implicit $mxcsr
+    ; CHECK-NEXT: renamable $xmm0 = nofpexcept ADDPDrr killed renamable $xmm0, killed renamable $xmm3, implicit $mxcsr
+    ; CHECK-NEXT: RET64 $xmm0
 
 ...
 ---
@@ -751,35 +472,14 @@ hasEHCatchret:   false
 hasEHScopes:     false
 hasEHFunclets:   false
 isOutlined:      false
-debugInstrRef:   false
+debugInstrRef:   true
 failsVerification: false
-tracksDebugUserValues: false
-registers:
-  - { id: 0, class: gr64, preferred-register: '' }
-  - { id: 1, class: gr64, preferred-register: '' }
-  - { id: 2, class: gr64, preferred-register: '' }
-  - { id: 3, class: vr128, preferred-register: '' }
-  - { id: 4, class: vr128, preferred-register: '' }
-  - { id: 5, class: vr128, preferred-register: '' }
-  - { id: 6, class: vr128, preferred-register: '' }
-  - { id: 7, class: vr128, preferred-register: '' }
-  - { id: 8, class: vr128, preferred-register: '' }
-  - { id: 9, class: vr128, preferred-register: '' }
-  - { id: 10, class: vr128, preferred-register: '' }
-  - { id: 11, class: vr128, preferred-register: '' }
-  - { id: 12, class: vr128, preferred-register: '' }
-  - { id: 13, class: vr128, preferred-register: '' }
-  - { id: 14, class: vr128, preferred-register: '' }
-  - { id: 15, class: vr128, preferred-register: '' }
-  - { id: 16, class: vr128, preferred-register: '' }
-  - { id: 17, class: vr128, preferred-register: '' }
-  - { id: 18, class: vr128, preferred-register: '' }
-  - { id: 19, class: vr128, preferred-register: '' }
-  - { id: 20, class: vr128, preferred-register: '' }
+tracksDebugUserValues: true
+registers:       []
 liveins:
-  - { reg: '$rcx', virtual-reg: '%0' }
-  - { reg: '$rdx', virtual-reg: '%1' }
-  - { reg: '$r8', virtual-reg: '%2' }
+  - { reg: '$xmm0', virtual-reg: '' }
+  - { reg: '$xmm1', virtual-reg: '' }
+  - { reg: '$xmm2', virtual-reg: '' }
 frameInfo:
   isFrameAddressTaken: false
   isReturnAddressTaken: false
@@ -787,12 +487,12 @@ frameInfo:
   hasPatchPoint:   false
   stackSize:       0
   offsetAdjustment: 0
-  maxAlignment:    16
+  maxAlignment:    1
   adjustsStack:    false
   hasCalls:        false
   stackProtector:  ''
   functionContext: ''
-  maxCallFrameSize: 4294967295
+  maxCallFrameSize: 0
   cvBytesOfCalleeSavedRegisters: 0
   hasOpaqueSPAdjustment: false
   hasVAStart:      false
@@ -802,22 +502,7 @@ frameInfo:
   savePoint:       ''
   restorePoint:    ''
 fixedStack:      []
-stack:
-  - { id: 0, name: c.addr, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
-  - { id: 1, name: b.addr, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
-  - { id: 2, name: a.addr, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
-  - { id: 3, name: tmp, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
-  - { id: 4, name: tmp2, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
+stack:           []
 entry_values:    []
 callSites:       []
 debugValueSubstitutions: []
@@ -825,31 +510,20 @@ constants:       []
 machineFunctionInfo: {}
 body:             |
   bb.0.entry:
-    liveins: $rcx, $rdx, $r8
+    liveins: $xmm0, $xmm1, $xmm2
   
-    %2:gr64 = COPY $r8
-    %1:gr64 = COPY $rdx
-    %0:gr64 = COPY $rcx
-    %5:vr128 = MOVAPDrm %2, 1, $noreg, 0, $noreg :: (load (s128))
-    %4:vr128 = MOVAPDrm %1, 1, $noreg, 0, $noreg :: (load (s128))
-    %3:vr128 = MOVAPDrm %0, 1, $noreg, 0, $noreg :: (load (s128))
-    MOVAPDmr %stack.0.c.addr, 1, $noreg, 0, $noreg, %5 :: (store (s128) into %ir.c.addr)
-    MOVAPDmr %stack.1.b.addr, 1, $noreg, 0, $noreg, %4 :: (store (s128) into %ir.b.addr)
-    MOVAPDmr %stack.2.a.addr, 1, $noreg, 0, $noreg, %3 :: (store (s128) into %ir.a.addr)
-    %20:vr128 = MOVAPDrm %stack.2.a.addr, 1, $noreg, 0, $noreg :: (load (s128) from %ir.a.addr)
-    %19:vr128 = MULPDrm %20, %stack.1.b.addr, 1, $noreg, 0, $noreg, implicit $mxcsr :: (load (s128) from %ir.b.addr)
-    MOVAPDmr %stack.3.tmp, 1, $noreg, 0, $noreg, %19 :: (store (s128) into %ir.tmp)
-    %15:vr128 = MOVAPDrm %stack.3.tmp, 1, $noreg, 0, $noreg :: (load (s128) from %ir.tmp)
-    %14:vr128 = ADDPDrm %15, %stack.0.c.addr, 1, $noreg, 0, $noreg, implicit $mxcsr :: (load (s128) from %ir.c.addr)
-    MOVAPDmr %stack.4.tmp2, 1, $noreg, 0, $noreg, %14 :: (store (s128) into %ir.tmp2)
-    %10:vr128 = MOVAPDrm %stack.3.tmp, 1, $noreg, 0, $noreg :: (load (s128) from %ir.tmp)
-    %9:vr128 = MULPDrm %10, %stack.0.c.addr, 1, $noreg, 0, $noreg, implicit $mxcsr :: (load (s128) from %ir.c.addr)
-    $xmm0 = COPY %9
-    RET64 implicit $xmm0
+    renamable $xmm0 = nofpexcept MULPDrr killed renamable $xmm0, killed renamable $xmm1, implicit $mxcsr
+    renamable $xmm2 = nofpexcept ADDPDrr killed renamable $xmm2, renamable $xmm0, implicit $mxcsr
+    renamable $xmm0 = nofpexcept ADDPDrr killed renamable $xmm0, killed renamable $xmm2, implicit $mxcsr
+    RET64 $xmm0
 
+    ; CHECK: renamable $xmm0 = nofpexcept MULPDrr killed renamable $xmm0, killed renamable $xmm1, implicit $mxcsr
+    ; CHECK-NEXT: renamable $xmm2 = nofpexcept ADDPDrr killed renamable $xmm2, renamable $xmm0, implicit $mxcsr
+    ; CHECK-NEXT: renamable $xmm0 = nofpexcept ADDPDrr killed renamable $xmm0, killed renamable $xmm2, implicit $mxcsr
+    ; CHECK-NEXT: RET64 $xmm0
 ...
 ---
-name:            '?swap_addpd@@YA?AU__m128d@@U1@00@Z'
+name:            '?muladd_test7@@YA?AU__m128d@@U1@00@Z'
 alignment:       16
 exposesReturnsTwice: false
 legalized:       false
@@ -864,32 +538,13 @@ hasEHCatchret:   false
 hasEHScopes:     false
 hasEHFunclets:   false
 isOutlined:      false
-debugInstrRef:   false
+debugInstrRef:   true
 failsVerification: false
-tracksDebugUserValues: false
-registers:
-  - { id: 0, class: gr64, preferred-register: '' }
-  - { id: 1, class: gr64, preferred-register: '' }
-  - { id: 2, class: gr64, preferred-register: '' }
-  - { id: 3, class: vr128, preferred-register: '' }
-  - { id: 4, class: vr128, preferred-register: '' }
-  - { id: 5, class: vr128, preferred-register: '' }
-  - { id: 6, class: vr128, preferred-register: '' }
-  - { id: 7, class: vr128, preferred-register: '' }
-  - { id: 8, class: vr128, preferred-register: '' }
-  - { id: 9, class: vr128, preferred-register: '' }
-  - { id: 10, class: vr128, preferred-register: '' }
-  - { id: 11, class: vr128, preferred-register: '' }
-  - { id: 12, class: vr128, preferred-register: '' }
-  - { id: 13, class: vr128, preferred-register: '' }
-  - { id: 14, class: vr128, preferred-register: '' }
-  - { id: 15, class: vr128, preferred-register: '' }
-  - { id: 16, class: vr128, preferred-register: '' }
-  - { id: 17, class: vr128, preferred-register: '' }
+tracksDebugUserValues: true
+registers:       []
 liveins:
-  - { reg: '$rcx', virtual-reg: '%0' }
-  - { reg: '$rdx', virtual-reg: '%1' }
-  - { reg: '$r8', virtual-reg: '%2' }
+  - { reg: '$xmm0', virtual-reg: '' }
+  - { reg: '$xmm1', virtual-reg: '' }
 frameInfo:
   isFrameAddressTaken: false
   isReturnAddressTaken: false
@@ -897,12 +552,12 @@ frameInfo:
   hasPatchPoint:   false
   stackSize:       0
   offsetAdjustment: 0
-  maxAlignment:    16
+  maxAlignment:    1
   adjustsStack:    false
   hasCalls:        false
   stackProtector:  ''
   functionContext: ''
-  maxCallFrameSize: 4294967295
+  maxCallFrameSize: 0
   cvBytesOfCalleeSavedRegisters: 0
   hasOpaqueSPAdjustment: false
   hasVAStart:      false
@@ -912,63 +567,22 @@ frameInfo:
   savePoint:       ''
   restorePoint:    ''
 fixedStack:      []
-stack:
-  - { id: 0, name: c.addr, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
-  - { id: 1, name: b.addr, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
-  - { id: 2, name: a.addr, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
-  - { id: 3, name: tmp, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
-  - { id: 4, name: tmp2, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
-  - { id: 5, name: tmp3, type: default, offset: 0, size: 16, alignment: 16, 
-      stack-id: default, callee-saved-register: '', callee-saved-restored: true, 
-      debug-info-variable: '', debug-info-expression: '', debug-info-location: '' }
+stack:           []
 entry_values:    []
 callSites:       []
 debugValueSubstitutions: []
-constants:
-  - id:              0
-    value:           '<2 x double> <double -2.000000e+00, double -2.000000e+00>'
-    alignment:       16
-    isTargetSpecific: false
+constants:       []
 machineFunctionInfo: {}
 body:             |
   bb.0.entry:
-    liveins: $rcx, $rdx, $r8
+    liveins: $xmm0, $xmm1
   
-    %2:gr64 = COPY $r8
-    %1:gr64 = COPY $rdx
-    %0:gr64 = COPY $rcx
-    %5:vr128 = MOVAPDrm %2, 1, $noreg, 0, $noreg :: (load (s128))
-    %4:vr128 = MOVAPDrm %1, 1, $noreg, 0, $noreg :: (load (s128))
-    %3:vr128 = MOVAPDrm %0, 1, $noreg, 0, $noreg :: (load (s128))
-    MOVAPDmr %stack.0.c.addr, 1, $noreg, 0, $noreg, %5 :: (store (s128) into %ir.c.addr)
-    MOVAPDmr %stack.1.b.addr, 1, $noreg, 0, $noreg, %4 :: (store (s128) into %ir.b.addr)
-    MOVAPDmr %stack.2.a.addr, 1, $noreg, 0, $noreg, %3 :: (store (s128) into %ir.a.addr)
-    %8:vr128 = MOVAPDrm %stack.0.c.addr, 1, $noreg, 0, $noreg :: (dereferenceable load (s128) from %ir.c.addr)
-    %9:vr128 = MOVAPDrm %stack.1.b.addr, 1, $noreg, 0, $noreg :: (dereferenceable load (s128) from %ir.b.addr)
-    %10:vr128 = nofpexcept MULPDrr %8, killed %9, implicit $mxcsr
-    MOVAPDmr %stack.3.tmp, 1, $noreg, 0, $noreg, killed %10 :: (store (s128) into %ir.tmp)
-    %11:vr128 = MOVAPDrm %stack.0.c.addr, 1, $noreg, 0, $noreg :: (dereferenceable load (s128) from %ir.c.addr)
-    %12:vr128 = MOVAPDrm %stack.1.b.addr, 1, $noreg, 0, $noreg :: (dereferenceable load (s128) from %ir.b.addr)
-    %13:vr128 = nofpexcept DIVPDrr %11, killed %12, implicit $mxcsr
-    MOVAPDmr %stack.4.tmp2, 1, $noreg, 0, $noreg, killed %13 :: (store (s128) into %ir.tmp2)
-    %14:vr128 = MOVAPDrm %stack.4.tmp2, 1, $noreg, 0, $noreg :: (dereferenceable load (s128) from %ir.tmp2)
-    %15:vr128 = MOVAPDrm %stack.3.tmp, 1, $noreg, 0, $noreg :: (dereferenceable load (s128) from %ir.tmp)
-    %16:vr128 = nofpexcept ADDPDrr %14, killed %15, implicit $mxcsr
-    MOVAPDmr %stack.5.tmp3, 1, $noreg, 0, $noreg, killed %16 :: (store (s128) into %ir.tmp3)
-    %7:vr128 = MOVAPDrm %stack.5.tmp3, 1, $noreg, 0, $noreg :: (dereferenceable load (s128) from %ir.tmp3)
-    %17:vr128 = MOVAPDrm $rip, 1, $noreg, %const.0, $noreg :: (load (s128) from constant-pool)
-    %6:vr128 = nofpexcept ADDPDrr %7, killed %17, implicit $mxcsr
-    $xmm0 = COPY %6
-    RET64 implicit $xmm0
+    renamable $xmm0 = nofpexcept MULPDrr killed renamable $xmm0, killed renamable $xmm1, implicit $mxcsr
+    renamable $xmm0 = nofpexcept ADDPDrr killed renamable $xmm0, renamable $xmm0, implicit $mxcsr
+    RET64 $xmm0
+
+    ; CHECK: $xmm0 = VFMADD213PDZ128r $xmm0, $xmm1, $xmm0, implicit $mxcsr
+    ; CHECK-NEXT: RET64 $xmm0
+
 
 ...
