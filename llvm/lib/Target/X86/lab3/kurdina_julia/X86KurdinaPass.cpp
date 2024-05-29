@@ -40,11 +40,7 @@ public:
               if (reg_mul == reg_add_1 || reg_mul == reg_add_2) {
                 del_instr.emplace_back(mul_instr, add_instr);
                 change = true;
-                if (reg_mul == reg_add_1) {
-                  reg = false;
-                } else {
-                  reg = true;
-                }
+                
                 break;
               }
             } else if (next_instr->definesRegister(
@@ -63,11 +59,7 @@ public:
       builder.addReg(add->getOperand(0).getReg(), RegState::Define);
       builder.addReg(mul->getOperand(1).getReg());
       builder.addReg(mul->getOperand(2).getReg());
-      if (reg) {
-        builder.addReg(add->getOperand(1).getReg());
-      } else {
-        builder.addReg(add->getOperand(2).getReg());
-      }
+      builder.addReg(add->getOperand(2).getReg());
       mul->eraseFromParent();
       add->eraseFromParent();
     }
